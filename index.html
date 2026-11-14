@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PhotoCup - Grand Concours Photo</title>
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+</head>
+<body>
+
+  <header class="navbar">
+    <div class="logo">📸 PhotoCup</div>
+    <div id="user-info" class="user-info" style="display:none;">
+      <span id="user-email"></span>
+      <button id="logout-btn" class="btn btn-secondary">Déconnexion</button>
+    </div>
+  </header>
+
+  <main class="container">
+    
+    <!-- Section Authentification -->
+    <section id="auth-section" class="card">
+      <h2>Connexion au Concours</h2>
+      <p>Connectez-vous pour attribuer vos votes (1 seul vote autorisé par personne).</p>
+      
+      <div id="auth-error" class="alert alert-error" style="display:none;"></div>
+
+      <form id="login-form">
+        <input type="email" id="email" placeholder="Votre Adresse E-mail" required>
+        <input type="password" id="password" placeholder="Mot de passe" required>
+        <div class="auth-buttons">
+          <button type="submit" id="login-btn" class="btn btn-primary">Se Connecter</button>
+          <button type="button" id="signup-btn" class="btn btn-outline">Créer un Compte</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Section Système de Vote -->
+    <section id="voting-section" style="display:none;">
+      <div class="voting-header card">
+        <h2>Votez pour vos 3 photos préférées</h2>
+        <p class="subtitle">Sélectionnez vos choix : <strong>3 points</strong> pour votre 1ère, <strong>2 points</strong> pour la 2ème, et <strong>1 point</strong> pour la 3ème.</p>
+        
+        <div id="vote-message" class="alert" style="display:none;"></div>
+
+        <div class="podium-selectors">
+          <div class="selector-box gold">
+            <span class="badge">🥇 1er Choix (3 pts)</span>
+            <span id="select-1-title" class="selected-photo-name">Aucune sélectionnée</span>
+          </div>
+          <div class="selector-box silver">
+            <span class="badge">🥈 2ème Choix (2 pts)</span>
+            <span id="select-2-title" class="selected-photo-name">Aucune sélectionnée</span>
+          </div>
+          <div class="selector-box bronze">
+            <span class="badge">🥉 3ème Choix (1 pt)</span>
+            <span id="select-3-title" class="selected-photo-name">Aucune sélectionnée</span>
+          </div>
+        </div>
+
+        <button id="submit-vote-btn" class="btn btn-success btn-large" disabled>Envoyer mon Vote Final</button>
+      </div>
+
+      <div id="photos-grid" class="photos-grid">
+        <!-- Généré dynamiquement par JavaScript -->
+      </div>
+    </section>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

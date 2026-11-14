@@ -1,0 +1,20 @@
+[
+  {
+    "id": "photo1",
+    "title": "Coucher de Soleil Floral",
+    "author": "Sophie Martin",
+    "imageUrl": "photos/photo1.jpg"
+  },
+  {
+    "id": "photo2",
+    "title": "Les Sommets Enneigés",
+    "author": "Thomas Dubois",
+    "imageUrl": "photos/photo2.jpg"
+  },
+  {
+    "id": "photo3",
+    "title": "Lumières de la Ville",
+    "author": "Camille Leroy",
+    "imageUrl": "photos/photo3.jpg"
+  }
+]

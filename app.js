@@ -1,0 +1,185 @@
+// URL de votre Webhook Apps Script déployé à l'étape 2
+const APPS_SCRIPT_WEBHOOK_URL = "METTEZ_VOTRE_URL_GOOGLE_APPS_SCRIPT_ICI";
+
+// Configuration Firebase (copiée à l'étape 1)
+const firebaseConfig = {
+  apiKey: "VOTRE_API_KEY",
+  authDomain: "votre-projet.firebaseapp.com",
+  projectId: "votre-projet",
+  storageBucket: "votre-projet.appspot.com",
+  messagingSenderId: "XXXXXX",
+  appId: "XXXXXX"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+
+let currentUser = null;
+let photosData = [];
+let userChoices = { first: null, second: null, third: null };
+
+// Éléments DOM
+const authSection = document.getElementById('auth-section');
+const votingSection = document.getElementById('voting-section');
+const userInfo = document.getElementById('user-info');
+const userEmailSpan = document.getElementById('user-email');
+const authError = document.getElementById('auth-error');
+const voteMessage = document.getElementById('vote-message');
+const submitVoteBtn = document.getElementById('submit-vote-btn');
+
+// Ecouteur d'état Firebase Auth
+auth.onAuthStateChanged(user => {
+  if (user) {
+    currentUser = user;
+    userEmailSpan.textContent = user.email;
+    userInfo.style.display = 'flex';
+    authSection.style.display = 'none';
+    votingSection.style.display = 'block';
+    loadPhotos();
+  } else {
+    currentUser = null;
+    userInfo.style.display = 'none';
+    authSection.style.display = 'block';
+    votingSection.style.display = 'none';
+  }
+});
+
+// Connexion / Inscription
+document.getElementById('login-form').addEventListener('submit', e => {
+  e.preventDefault();
+  const email = document.getElementById('email').value;
+  const pass = document.getElementById('password').value;
+  
+  auth.signInWithEmailAndPassword(email, pass).catch(err => {
+    showError(err.message);
+  });
+});
+
+document.getElementById('signup-btn').addEventListener('click', () => {
+  const email = document.getElementById('email').value;
+  const pass = document.getElementById('password').value;
+  
+  auth.createUserWithEmailAndPassword(email, pass).then(() => {
+    alert("Compte créé avec succès !");
+  }).catch(err => {
+    showError(err.message);
+  });
+});
+
+document.getElementById('logout-btn').addEventListener('click', () => {
+  auth.signOut();
+});
+
+function showError(msg) {
+  authError.textContent = msg;
+  authError.style.display = 'block';
+}
+
+// Chargement des photos depuis photos.json
+async function loadPhotos() {
+  try {
+    const res = await fetch('photos.json');
+    photosData = await res.json();
+    renderPhotosGrid();
+  } catch (err) {
+    console.error("Erreur chargement photos.json", err);
+  }
+}
+
+function renderPhotosGrid() {
+  const grid = document.getElementById('photos-grid');
+  grid.innerHTML = '';
+
+  photosData.forEach(photo => {
+    const card = document.createElement('div');
+    card.className = 'photo-card';
+    card.innerHTML = `
+      <img src="${photo.imageUrl}" alt="${photo.title}" class="photo-img">
+      <div class="photo-body">
+        <div class="photo-title">${photo.title}</div>
+        <div class="photo-author">Par ${photo.author}</div>
+        <div class="vote-actions">
+          <button class="btn-choice ${userChoices.first === photo.id ? 'active' : ''}" onclick="selectChoice('first', '${photo.id}')">1er (3pt)</button>
+          <button class="btn-choice ${userChoices.second === photo.id ? 'active' : ''}" onclick="selectChoice('second', '${photo.id}')">2e (2pt)</button>
+          <button class="btn-choice ${userChoices.third === photo.id ? 'active' : ''}" onclick="selectChoice('third', '${photo.id}')">3e (1pt)</button>
+        </div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+
+  updatePodiumUI();
+}
+
+window.selectChoice = function(rank, photoId) {
+  // Annuler le choix si déjà sélectionné sur un autre rang
+  if (userChoices.first === photoId) userChoices.first = null;
+  if (userChoices.second === photoId) userChoices.second = null;
+  if (userChoices.third === photoId) userChoices.third = null;
+
+  userChoices[rank] = photoId;
+  renderPhotosGrid();
+};
+
+function updatePodiumUI() {
+  const getTitle = id => {
+    const p = photosData.find(item => item.id === id);
+    return p ? p.title : 'Aucune sélectionnée';
+  };
+
+  document.getElementById('select-1-title').textContent = getTitle(userChoices.first);
+  document.getElementById('select-2-title').textContent = getTitle(userChoices.second);
+  document.getElementById('select-3-title').textContent = getTitle(userChoices.third);
+
+  // Activer le bouton si les 3 choix sont valides et distincts
+  const isValid = userChoices.first && userChoices.second && userChoices.third &&
+                  userChoices.first !== userChoices.second &&
+                  userChoices.first !== userChoices.third &&
+                  userChoices.second !== userChoices.third;
+
+  submitVoteBtn.disabled = !isValid;
+}
+
+// Soumission du vote vers Google Apps Script
+submitVoteBtn.addEventListener('click', async () => {
+  if (!currentUser) return;
+
+  submitVoteBtn.disabled = true;
+  submitVoteBtn.textContent = "Enregistrement du vote...";
+
+  const payload = {
+    action: "submitVote",
+    voterEmail: currentUser.email,
+    voterId: currentUser.uid,
+    firstChoice: userChoices.first,
+    secondChoice: userChoices.second,
+    thirdChoice: userChoices.third
+  };
+
+  try {
+    const res = await fetch(APPS_SCRIPT_WEBHOOK_URL, {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+
+    voteMessage.style.display = 'block';
+    if (result.status === "success") {
+      voteMessage.className = 'alert alert-success';
+      voteMessage.textContent = "🎉 " + result.message;
+      document.querySelector('.voting-header').style.display = 'none';
+      document.getElementById('photos-grid').style.display = 'none';
+    } else {
+      voteMessage.className = 'alert alert-error';
+      voteMessage.textContent = "⚠️ " + result.message;
+      submitVoteBtn.disabled = false;
+      submitVoteBtn.textContent = "Envoyer mon Vote Final";
+    }
+  } catch (err) {
+    voteMessage.style.display = 'block';
+    voteMessage.className = 'alert alert-error';
+    voteMessage.textContent = "Erreur de connexion lors du vote.";
+    submitVoteBtn.disabled = false;
+    submitVoteBtn.textContent = "Envoyer mon Vote Final";
+  }
+});

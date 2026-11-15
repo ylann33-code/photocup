@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhotoCup - Concours Photo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="navbar">
+        <div class="logo"><i class="fa-solid fa-camera-retro"></i> PhotoCup</div>
+        <div id="userHeaderBadge" class="user-info" style="display: none;">
+            <div class="user-badge" style="display: flex; align-items: center; gap: 0.5rem; background: #1f293d; padding: 0.5rem 1rem; border-radius: 9999px; font-size: 0.875rem; color: #f1f5f9;">
+                <i class="fa-solid fa-user-circle" style="color: #3b82f6;"></i>
+                <span id="headerUserEmail">user@example.com</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Section Authentification / Inscription -->
+        <section id="authSection" class="card">
+            <div class="card-header">
+                <h2>Connexion / Inscription</h2>
+            </div>
+            <p class="subtitle">Entrez votre prénom, email et mot de passe pour participer au vote.</p>
+
+            <div id="auth-error" class="alert alert-error" style="display: none;"></div>
+
+            <div class="form-group">
+                <label>Prénom</label>
+                <input type="text" id="inputFirstName" placeholder="Votre prénom">
+            </div>
+            <div class="form-group">
+                <label>Adresse e-mail</label>
+                <input type="email" id="inputEmail" placeholder="votre.email@example.com">
+            </div>
+            <div class="form-group">
+                <label>Mot de passe</label>
+                <input type="password" id="inputPassword" placeholder="••••••••">
+            </div>
+
+            <div class="auth-buttons">
+                <button class="btn btn-primary" onclick="handleLoginOrRegister()">Se connecter / S'inscrire</button>
+            </div>
+        </section>
+
+        <!-- Section Concours / Vote -->
+        <section id="contestSection" class="card" style="display: none;">
+            <div id="closedContestMessage" class="alert alert-success" style="display: none; background: rgba(16, 185, 129, 0.15); border-color: var(--success); color: #6ee7b7;">
+                <i class="fa-solid fa-trophy" style="font-size: 2rem; margin-bottom: 0.5rem; display: block;"></i>
+                <h2>Le concours est terminé !</h2>
+                <p id="winnerAnnouncement" style="margin-top: 0.5rem; color: #f1f5f9;">Voici le grand gagnant du concours.</p>
+            </div>
+
+            <div id="votedConfirmationMessage" class="alert alert-success" style="display: none;">
+                <i class="fa-solid fa-check-circle" style="font-size: 2rem; margin-bottom: 0.5rem; display: block;"></i>
+                <h2>Vote pris en compte !</h2>
+                <p style="margin-top: 0.5rem; color: #f1f5f9;">Merci pour votre participation. En attente de la fin des votes par l'administrateur.</p>
+            </div>
+
+            <div id="votingActiveArea">
+                <div class="card-header">
+                    <h2>Votez pour vos 3 photos préférées</h2>
+                </div>
+                <p class="subtitle">Sélectionnez votre 1er choix (3 pts), 2ème choix (2 pts) et 3ème choix (1 pt).</p>
+
+                <div class="podium-selectors">
+                    <div class="selector-box gold">
+                        <div class="badge-title"><span class="rank-num">1</span> 1er Choix (3 pts)</div>
+                        <span id="select-1-title" class="selected-photo-name">Aucune sélectionnée</span>
+                    </div>
+                    <div class="selector-box silver">
+                        <div class="badge-title"><span class="rank-num">2</span> 2ème Choix (2 pts)</div>
+                        <span id="select-2-title" class="selected-photo-name">Aucune sélectionnée</span>
+                    </div>
+                    <div class="selector-box bronze">
+                        <div class="badge-title"><span class="rank-num">3</span> 3ème Choix (1 pt)</div>
+                        <span id="select-3-title" class="selected-photo-name">Aucune sélectionnée</span>
+                    </div>
+                </div>
+
+                <div id="photosContainer" class="photos-grid" style="margin-top: 2rem;">
+                    <!-- Photos chargées depuis photos.json -->
+                </div>
+
+                <div style="margin-top: 2rem;">
+                    <button id="submitVoteBtn" class="btn btn-success" disabled onclick="submitVotes()">Confirmer et Envoyer mon Vote</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxt5L1bHPGMJh4T6Mu5qYn14krZ3g3-qsgCX5oVbTNRP-tgNb6zBp_9R4gEntxAYqrV/exec";
+
+        let currentUser = null;
+        let photosData = [];
+        let contestStatus = { isOpen: true };
+        let existingVotes = [];
+        let userChoices = { first: null, second: null, third: null };
+
+        async function loadPhotosAndStatus() {
+            try {
+                // Charger les photos locales depuis photos.json
+                const resPhotos = await fetch('photos.json');
+                photosData = await resPhotos.json();
+
+                // Charger l'état et les votes depuis Google Sheets / Apps Script
+                const resStatus = await fetch(`${APPS_SCRIPT_URL}?action=getAll`);
+                const data = await resStatus.json();
+                if (data.contestStatus) contestStatus = data.contestStatus;
+                if (data.isOpen !== undefined) contestStatus.isOpen = data.isOpen;
+                if (data.votes) existingVotes = data.votes;
+
+                renderApp();
+            } catch (err) {
+                console.error("Erreur de chargement:", err);
+                renderApp();
+            }
+        }
+
+        async function handleLoginOrRegister() {
+            const email = document.getElementById("inputEmail").value.trim();
+            const password = document.getElementById("inputPassword").value.trim();
+            const firstName = document.getElementById("inputFirstName").value.trim();
+            const errorDiv = document.getElementById("auth-error");
+            errorDiv.style.display = 'none';
+
+            if (!email || !password) {
+                errorDiv.textContent = "Veuillez remplir l'email et le mot de passe.";
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify({ action: "register", email, password, firstName })
+                });
+                const res = await response.json();
+                currentUser = { email, firstName: res.firstName || firstName || email.split('@')[0] };
+            } catch (e) {
+                currentUser = { email, firstName: firstName || email.split('@')[0] };
+            }
+
+            document.getElementById("headerUserEmail").innerText = `${currentUser.firstName} (${currentUser.email})`;
+            document.getElementById("userHeaderBadge").style.display = 'flex';
+            document.getElementById("authSection").style.display = 'none';
+            document.getElementById("contestSection").style.display = 'block';
+
+            loadPhotosAndStatus();
+            setInterval(loadPhotosAndStatus, 15000);
+        }
+
+        function renderApp() {
+            if (!currentUser) return;
+
+            const isOpen = contestStatus.isOpen;
+            const hasVoted = existingVotes.some(v => v.voterEmail === currentUser.email || v.voterId === currentUser.email);
+
+            if (!isOpen) {
+                document.getElementById("closedContestMessage").style.display = 'block';
+                document.getElementById("votingActiveArea").style.display = 'none';
+
+                // Calculer le gagnant
+                const scores = {};
+                existingVotes.forEach(v => {
+                    if (v.firstChoicePhotoId) { scores[v.firstChoicePhotoId] = (scores[v.firstChoicePhotoId] || 0) + 3; }
+                    if (v.secondChoicePhotoId) { scores[v.secondChoicePhotoId] = (scores[v.secondChoicePhotoId] || 0) + 2; }
+                    if (v.thirdChoicePhotoId) { scores[v.thirdChoicePhotoId] = (scores[v.thirdChoicePhotoId] || 0) + 1; }
+                });
+
+                let winner = photosData[0];
+                let maxPts = -1;
+                photosData.forEach(p => {
+                    const pts = scores[p.id] || 0;
+                    if (pts > maxPts) { maxPts = pts; winner = p; }
+                });
+
+                if (winner) {
+                    document.getElementById("winnerAnnouncement").innerHTML = `Le grand gagnant est <strong>${winner.title}</strong> par ${winner.author} avec ${maxPts} points !`;
+                }
+                return;
+            }
+
+            if (hasVoted) {
+                document.getElementById("votedConfirmationMessage").style.display = 'block';
+                document.getElementById("votingActiveArea").style.display = 'none';
+                return;
+            }
+
+            const grid = document.getElementById("photosContainer");
+            grid.innerHTML = "";
+
+            photosData.forEach((photo, index) => {
+                const card = document.createElement("div");
+                card.className = "photo-card";
+                card.innerHTML = `
+                    <img src="${photo.imageUrl}" alt="${photo.title}" class="photo-img" onerror="this.src='photos/photo1.png'">
+                    <div class="photo-body">
+                        <div>
+                            <span class="photo-badge">Photo #${index + 1}</span>
+                            <div class="photo-title">${photo.title}</div>
+                            <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Par ${photo.author}</div>
+                        </div>
+                        <div class="vote-actions">
+                            <button class="btn-choice ${userChoices.first === photo.id ? 'active' : ''}" onclick="selectChoice('first', '${photo.id}')">1er (3pt)</button>
+                            <button class="btn-choice ${userChoices.second === photo.id ? 'active' : ''}" onclick="selectChoice('second', '${photo.id}')">2e (2pt)</button>
+                            <button class="btn-choice ${userChoices.third === photo.id ? 'active' : ''}" onclick="selectChoice('third', '${photo.id}')">3e (1pt)</button>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            updatePodiumUI();
+        }
+
+        window.selectChoice = function(rank, photoId) {
+            if (userChoices.first === photoId) userChoices.first = null;
+            if (userChoices.second === photoId) userChoices.second = null;
+            if (userChoices.third === photoId) userChoices.third = null;
+
+            userChoices[rank] = photoId;
+            renderApp();
+        };
+
+        function updatePodiumUI() {
+            const getTitle = id => {
+                const p = photosData.find(item => item.id === id);
+                return p ? p.title : 'Aucune sélectionnée';
+            };
+
+            document.getElementById('select-1-title').textContent = getTitle(userChoices.first);
+            document.getElementById('select-2-title').textContent = getTitle(userChoices.second);
+            document.getElementById('select-3-title').textContent = getTitle(userChoices.third);
+
+            const isValid = userChoices.first && userChoices.second && userChoices.third &&
+                            userChoices.first !== userChoices.second &&
+                            userChoices.first !== userChoices.third &&
+                            userChoices.second !== userChoices.third;
+
+            document.getElementById('submitVoteBtn').disabled = !isValid;
+        }
+
+        async function submitVotes() {
+            if (!currentUser) return;
+            const btn = document.getElementById('submitVoteBtn');
+            btn.disabled = true;
+            btn.textContent = "Transmission du vote...";
+
+            const payload = {
+                action: "submitVote",
+                voterEmail: currentUser.email,
+                voterId: currentUser.email,
+                firstChoice: userChoices.first,
+                secondChoice: userChoices.second,
+                thirdChoice: userChoices.third
+            };
+
+            try {
+                const res = await fetch(APPS_SCRIPT_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify(payload)
+                });
+                const result = await res.json();
+
+                if (result.status === "success" || result.success) {
+                    document.getElementById("votedConfirmationMessage").style.display = 'block';
+                    document.getElementById("votingActiveArea").style.display = 'none';
+                    loadPhotosAndStatus();
+                } else {
+                    alert(result.message || "Erreur lors de l'enregistrement du vote.");
+                    btn.disabled = false;
+                    btn.textContent = "Confirmer et Envoyer mon Vote";
+                }
+            } catch (err) {
+                console.error("Erreur:", err);
+                alert("Erreur de connexion au serveur de vote.");
+                btn.disabled = false;
+                btn.textContent = "Confirmer et Envoyer mon Vote";
+            }
+        }
+    </script>
+</body>
+</html>

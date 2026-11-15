@@ -1,14 +1,14 @@
-// URL de votre Webhook Apps Script déployé à l'étape 2
-const APPS_SCRIPT_WEBHOOK_URL = "METTEZ_VOTRE_URL_GOOGLE_APPS_SCRIPT_ICI";
+// Votre URL de Webhook Google Apps Script en direct
+const APPS_SCRIPT_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzgtiMZlXHvBUxPF8ADyl0z4X2ZY2TCOzEQQPKRquCDd9wH-BvMpXj8T_zrtomN8qAI/exec";
 
-// Configuration Firebase (copiée à l'étape 1)
+// Votre configuration Firebase réelle
 const firebaseConfig = {
-  apiKey: "VOTRE_API_KEY",
-  authDomain: "votre-projet.firebaseapp.com",
-  projectId: "votre-projet",
-  storageBucket: "votre-projet.appspot.com",
-  messagingSenderId: "XXXXXX",
-  appId: "XXXXXX"
+  apiKey: "AIzaSyDkTqTxMxoqYjh5g43d1R_a1RQ4J1XztlY",
+  authDomain: "photocup.firebaseapp.com",
+  projectId: "photocup",
+  storageBucket: "photocup.firebasestorage.app",
+  messagingSenderId: "414488698018",
+  appId: "1:414488698018:web:a82a1f764f9753dc3a8bfb"
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -18,7 +18,6 @@ let currentUser = null;
 let photosData = [];
 let userChoices = { first: null, second: null, third: null };
 
-// Éléments DOM
 const authSection = document.getElementById('auth-section');
 const votingSection = document.getElementById('voting-section');
 const userInfo = document.getElementById('user-info');
@@ -27,7 +26,6 @@ const authError = document.getElementById('auth-error');
 const voteMessage = document.getElementById('vote-message');
 const submitVoteBtn = document.getElementById('submit-vote-btn');
 
-// Ecouteur d'état Firebase Auth
 auth.onAuthStateChanged(user => {
   if (user) {
     currentUser = user;
@@ -44,7 +42,6 @@ auth.onAuthStateChanged(user => {
   }
 });
 
-// Connexion / Inscription
 document.getElementById('login-form').addEventListener('submit', e => {
   e.preventDefault();
   const email = document.getElementById('email').value;
@@ -75,14 +72,13 @@ function showError(msg) {
   authError.style.display = 'block';
 }
 
-// Chargement des photos depuis photos.json
 async function loadPhotos() {
   try {
     const res = await fetch('photos.json');
     photosData = await res.json();
     renderPhotosGrid();
   } catch (err) {
-    console.error("Erreur chargement photos.json", err);
+    console.error("Erreur de chargement de photos.json", err);
   }
 }
 
@@ -96,8 +92,10 @@ function renderPhotosGrid() {
     card.innerHTML = `
       <img src="${photo.imageUrl}" alt="${photo.title}" class="photo-img">
       <div class="photo-body">
-        <div class="photo-title">${photo.title}</div>
-        <div class="photo-author">Par ${photo.author}</div>
+        <div>
+          <div class="photo-title">${photo.title}</div>
+          <div class="photo-author">Par ${photo.author}</div>
+        </div>
         <div class="vote-actions">
           <button class="btn-choice ${userChoices.first === photo.id ? 'active' : ''}" onclick="selectChoice('first', '${photo.id}')">1er (3pt)</button>
           <button class="btn-choice ${userChoices.second === photo.id ? 'active' : ''}" onclick="selectChoice('second', '${photo.id}')">2e (2pt)</button>
@@ -112,7 +110,6 @@ function renderPhotosGrid() {
 }
 
 window.selectChoice = function(rank, photoId) {
-  // Annuler le choix si déjà sélectionné sur un autre rang
   if (userChoices.first === photoId) userChoices.first = null;
   if (userChoices.second === photoId) userChoices.second = null;
   if (userChoices.third === photoId) userChoices.third = null;
@@ -131,7 +128,6 @@ function updatePodiumUI() {
   document.getElementById('select-2-title').textContent = getTitle(userChoices.second);
   document.getElementById('select-3-title').textContent = getTitle(userChoices.third);
 
-  // Activer le bouton si les 3 choix sont valides et distincts
   const isValid = userChoices.first && userChoices.second && userChoices.third &&
                   userChoices.first !== userChoices.second &&
                   userChoices.first !== userChoices.third &&
@@ -140,7 +136,6 @@ function updatePodiumUI() {
   submitVoteBtn.disabled = !isValid;
 }
 
-// Soumission du vote vers Google Apps Script
 submitVoteBtn.addEventListener('click', async () => {
   if (!currentUser) return;
 

@@ -3,10 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PhotoCup - Grand Concours Photo</title>
+  <title>PhotoCup - Votez pour le Concours Photo</title>
   <link rel="stylesheet" href="style.css">
   
-  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 </head>
@@ -21,11 +20,9 @@
   </header>
 
   <main class="container">
-    
-    <!-- Section Authentification -->
     <section id="auth-section" class="card">
-      <h2>Connexion au Concours</h2>
-      <p>Connectez-vous pour attribuer vos votes (1 seul vote autorisé par personne).</p>
+      <h2>Connexion au Concours Photo</h2>
+      <p>Connectez-vous pour voter (1 seul vote par participant).</p>
       
       <div id="auth-error" class="alert alert-error" style="display:none;"></div>
 
@@ -39,11 +36,10 @@
       </form>
     </section>
 
-    <!-- Section Système de Vote -->
     <section id="voting-section" style="display:none;">
       <div class="voting-header card">
-        <h2>Votez pour vos 3 photos préférées</h2>
-        <p class="subtitle">Sélectionnez vos choix : <strong>3 points</strong> pour votre 1ère, <strong>2 points</strong> pour la 2ème, et <strong>1 point</strong> pour la 3ème.</p>
+        <h2>Sélectionnez vos 3 photos préférées parmi les 12 participants</h2>
+        <p class="subtitle">Attribuez <strong>3 points</strong> à votre 1ère, <strong>2 points</strong> à la 2ème, et <strong>1 point</strong> à la 3ème.</p>
         
         <div id="vote-message" class="alert" style="display:none;"></div>
 
@@ -65,11 +61,8 @@
         <button id="submit-vote-btn" class="btn btn-success btn-large" disabled>Envoyer mon Vote Final</button>
       </div>
 
-      <div id="photos-grid" class="photos-grid">
-        <!-- Généré dynamiquement par JavaScript -->
-      </div>
+      <div id="photos-grid" class="photos-grid"></div>
     </section>
-
   </main>
 
   <script src="app.js"></script>

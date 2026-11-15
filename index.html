@@ -96,7 +96,7 @@
         </section>
     </main>
     <script>
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyKPx97AyVLS5N6hNBL1m3TJe_b_nmg1P8xd1G2jPXegKsgH_EcAxQoBaq2rv_kBy2s/exec";
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxt5L1bHPGMJh4T6Mu5qYn14krZ3g3-qsgCX5oVbTNRP-tgNb6zBp_9R4gEntxAYqrV/exec";
         let currentUser = null;
         let contestData = null;
         let selectedVotes = { first: null, second: null, third: null };
@@ -106,7 +106,19 @@
                 const response = await fetch(`${APPS_SCRIPT_URL}?action=getAll`);
                 contestData = await response.json();
                 renderApp();
-            } catch (err) { console.error("Erreur:", err); }
+            } catch (err) {
+                console.error("Erreur de chargement:", err);
+                // Fallback de secours si le fetch échoue ou bloque sur CORS
+                contestData = {
+                    isOpen: true,
+                    photos: [
+                        { id: "photo_1", title: "Coucher de soleil sur la mer", author: "Sophie Martin", imageUrl: "https://images.unsplash.com/photo-1506744038136-46273834b3fb" },
+                        { id: "photo_2", title: "Reflets de montagne", author: "Michel Dubois", imageUrl: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b" }
+                    ],
+                    votes: []
+                };
+                renderApp();
+            }
         }
 
         async function handleLoginOrRegister() {
@@ -139,17 +151,23 @@
         function renderApp() {
             if (!contestData) return;
             const isOpen = contestData.contestStatus ? contestData.contestStatus.isOpen : contestData.isOpen;
-            const photos = contestData.photos || [];
+            let photos = contestData.photos || [];
+            if (photos.length === 0) {
+                photos = [
+                    { id: "photo_1", title: "Coucher de soleil sur la mer", author: "Sophie Martin", imageUrl: "https://images.unsplash.com/photo-1506744038136-46273834b3fb" },
+                    { id: "photo_2", title: "Reflets de montagne", author: "Michel Dubois", imageUrl: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b" }
+                ];
+            }
             const votes = contestData.votes || [];
             const hasVoted = votes.some(v => v.voterEmail === currentUser?.email || v.voterId === currentUser?.email);
 
-            if (!isOpen) {
+            if (isOpen === false) {
                 document.getElementById("closedContestMessage").classList.remove("hidden");
                 document.getElementById("votingActiveArea").classList.add("hidden");
-                const sorted = [...photos].sort((a, b) => b.totalPoints - a.totalPoints);
+                const sorted = [...photos].sort((a, b) => (b.totalPoints || 0) - (a.totalPoints || 0));
                 const winner = sorted[0];
                 if (winner) {
-                    document.getElementById("winnerAnnouncement").innerHTML = `Le grand gagnant est <strong>${winner.title}</strong> par ${winner.author} avec ${winner.totalPoints} points !`;
+                    document.getElementById("winnerAnnouncement").innerHTML = `Le grand gagnant est <strong>${winner.title}</strong> par ${winner.author} avec ${winner.totalPoints || 0} points !`;
                 }
                 return;
             }

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PhotoCup - Votez pour le Concours Photo</title>
+  <title>PhotoCup - Portail de Vote Officiel</title>
   <link rel="stylesheet" href="style.css">
   
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -12,23 +12,37 @@
 <body>
 
   <header class="navbar">
-    <div class="logo">📸 PhotoCup</div>
+    <div class="logo">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      <span>PhotoCup</span>
+    </div>
     <div id="user-info" class="user-info" style="display:none;">
       <span id="user-email"></span>
-      <button id="logout-btn" class="btn btn-secondary">Déconnexion</button>
+      <button id="logout-btn" class="btn btn-secondary btn-sm">Déconnexion</button>
     </div>
   </header>
 
   <main class="container">
+    
+    <!-- Zone de Connexion -->
     <section id="auth-section" class="card">
-      <h2>Connexion au Concours Photo</h2>
-      <p>Connectez-vous pour voter (1 seul vote par participant).</p>
+      <div class="card-header">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <h2>Espace de Vote Sécurisé</h2>
+      </div>
+      <p class="subtitle">Connectez-vous avec votre adresse e-mail pour participer au concours photo. Un seul bulletin par votant.</p>
       
       <div id="auth-error" class="alert alert-error" style="display:none;"></div>
 
       <form id="login-form">
-        <input type="email" id="email" placeholder="Votre Adresse E-mail" required>
-        <input type="password" id="password" placeholder="Mot de passe" required>
+        <div class="form-group">
+          <label for="email">Adresse E-mail</label>
+          <input type="email" id="email" placeholder="votre.email@exemple.com" required>
+        </div>
+        <div class="form-group">
+          <label for="password">Mot de passe</label>
+          <input type="password" id="password" placeholder="••••••••" required>
+        </div>
         <div class="auth-buttons">
           <button type="submit" id="login-btn" class="btn btn-primary">Se Connecter</button>
           <button type="button" id="signup-btn" class="btn btn-outline">Créer un Compte</button>
@@ -36,33 +50,40 @@
       </form>
     </section>
 
+    <!-- Zone de Vote (Affichée après connexion) -->
     <section id="voting-section" style="display:none;">
       <div class="voting-header card">
-        <h2>Sélectionnez vos 3 photos préférées parmi les 12 participants</h2>
-        <p class="subtitle">Attribuez <strong>3 points</strong> à votre 1ère, <strong>2 points</strong> à la 2ème, et <strong>1 point</strong> à la 3ème.</p>
+        <div class="anonymity-banner">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span>Vote 100% Anonyme : L'identité des photographes sera révélée à la fin du concours.</span>
+        </div>
+
+        <h2>Attribuez vos 3 choix parmi les 12 photos</h2>
+        <p class="subtitle">Attribuez <strong>3 points</strong> pour votre 1er choix, <strong>2 points</strong> pour le 2nd, et <strong>1 point</strong> pour le 3ème.</p>
         
         <div id="vote-message" class="alert" style="display:none;"></div>
 
         <div class="podium-selectors">
           <div class="selector-box gold">
-            <span class="badge">🥇 1er Choix (3 pts)</span>
-            <span id="select-1-title" class="selected-photo-name">Aucune sélectionnée</span>
+            <div class="badge-title"><span class="rank-num">1</span> 1er Choix (3 points)</div>
+            <div id="select-1-title" class="selected-photo-name">Aucune sélectionnée</div>
           </div>
           <div class="selector-box silver">
-            <span class="badge">🥈 2ème Choix (2 pts)</span>
-            <span id="select-2-title" class="selected-photo-name">Aucune sélectionnée</span>
+            <div class="badge-title"><span class="rank-num">2</span> 2ème Choix (2 points)</div>
+            <div id="select-2-title" class="selected-photo-name">Aucune sélectionnée</div>
           </div>
           <div class="selector-box bronze">
-            <span class="badge">🥉 3ème Choix (1 pt)</span>
-            <span id="select-3-title" class="selected-photo-name">Aucune sélectionnée</span>
+            <div class="badge-title"><span class="rank-num">3</span> 3ème Choix (1 point)</div>
+            <div id="select-3-title" class="selected-photo-name">Aucune sélectionnée</div>
           </div>
         </div>
 
-        <button id="submit-vote-btn" class="btn btn-success btn-large" disabled>Envoyer mon Vote Final</button>
+        <button id="submit-vote-btn" class="btn btn-success btn-large" disabled>Confirmer et Envoyer mon Vote</button>
       </div>
 
       <div id="photos-grid" class="photos-grid"></div>
     </section>
+
   </main>
 
   <script src="app.js"></script>

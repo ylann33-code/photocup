@@ -1,4 +1,4 @@
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyNQlTnCSNjvIyGeLICrToQ1m0C8ozhHgR4CczT9ainHCq2AwPgS9oeP5rdgofQ1Cg4/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby4663JxdllFTh4AxW6qJCSgyoXx5peMz5Nf_emPFsbJN9CDzPIfMd2ESoG99hoW0dX/exec";
 
 let currentUser = null; // { email, firstName }
 let photosData = [];
@@ -242,6 +242,8 @@ async function submitVotes() {
         action: "submitVote",
         voterEmail: currentUser.email,
         voterId: currentUser.email,
+        voterName: currentUser.firstName,
+        firstName: currentUser.firstName,
         firstChoice: userChoices.first,
         secondChoice: userChoices.second,
         thirdChoice: userChoices.third

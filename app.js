@@ -1,10 +1,16 @@
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyNQlTnCSNjvIyGeLICrToQ1m0C8ozhHgR4CczT9ainHCq2AwPgS9oeP5rdgofQ1Cg4/exec";
 
-let currentUser = null;
+let currentUser = null; // { email, firstName }
 let photosData = [];
 let contestStatus = { status: "OPEN", isOpen: true };
 let existingVotes = [];
 let userChoices = { first: null, second: null, third: null };
+
+// Charger automatiquement les photos et l'état du concours dès l'ouverture de la page
+window.addEventListener('DOMContentLoaded', () => {
+    loadPhotosAndStatus();
+    setInterval(loadPhotosAndStatus, 15000);
+});
 
 async function loadPhotosAndStatus() {
     try {
@@ -28,49 +34,9 @@ async function loadPhotosAndStatus() {
     }
 }
 
-async function handleLoginOrRegister() {
-    const email = document.getElementById("inputEmail").value.trim();
-    const password = document.getElementById("inputPassword").value.trim();
-    const firstName = document.getElementById("inputFirstName").value.trim();
-    const errorDiv = document.getElementById("auth-error");
-    if (errorDiv) errorDiv.style.display = 'none';
-
-    if (!email || !password) {
-        if (errorDiv) {
-            errorDiv.textContent = "Veuillez remplir l'email et le mot de passe.";
-            errorDiv.style.display = 'block';
-        } else {
-            alert("Veuillez remplir l'email et le mot de passe.");
-        }
-        return;
-    }
-
-    try {
-        const response = await fetch(APPS_SCRIPT_URL, {
-            method: "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify({ action: "register", email, password, firstName })
-        });
-        const res = await response.json();
-        currentUser = { email, firstName: res.firstName || firstName || email.split('@')[0] };
-    } catch (e) {
-        currentUser = { email, firstName: firstName || email.split('@')[0] };
-    }
-
-    document.getElementById("headerUserEmail").innerText = `${currentUser.firstName} (${currentUser.email})`;
-    document.getElementById("userHeaderBadge").style.display = 'flex';
-    document.getElementById("authSection").style.display = 'none';
-    document.getElementById("contestSection").style.display = 'block';
-
-    loadPhotosAndStatus();
-    setInterval(loadPhotosAndStatus, 15000);
-}
-
 function renderApp() {
-    if (!currentUser) return;
-
     const statusState = contestStatus.status || (contestStatus.isOpen ? "OPEN" : "CLOSED");
-    const hasVoted = existingVotes.some(v => v.voterEmail === currentUser.email || v.voterId === currentUser.email);
+    const hasVoted = currentUser && existingVotes.some(v => v.voterEmail === currentUser.email || v.voterId === currentUser.email);
 
     const notStartedMsg = document.getElementById("notStartedMessage");
     const closedMsg = document.getElementById("closedContestMessage");
@@ -200,6 +166,53 @@ function updatePodiumUI() {
 
     const submitBtn = document.getElementById('submitVoteBtn');
     if (submitBtn) submitBtn.disabled = !isValid;
+}
+
+// Gestion du modal d'identification au moment de voter
+function promptVoterIdentity() {
+    if (!userChoices.first || !userChoices.second || !userChoices.third) {
+        alert("Veuillez sélectionner vos 3 choix de photos.");
+        return;
+    }
+
+    if (currentUser && currentUser.email) {
+        submitVotes();
+        return;
+    }
+
+    const modal = document.getElementById("voterModal");
+    if (modal) modal.style.display = 'flex';
+}
+
+function closeVoterModal() {
+    const modal = document.getElementById("voterModal");
+    if (modal) modal.style.display = 'none';
+}
+
+async function confirmAndSubmitVote() {
+    const firstName = document.getElementById("modalFirstName").value.trim();
+    const email = document.getElementById("modalEmail").value.trim();
+    const errorDiv = document.getElementById("modal-error");
+    if (errorDiv) errorDiv.style.display = 'none';
+
+    if (!firstName || !email) {
+        if (errorDiv) {
+            errorDiv.textContent = "Veuillez entrer votre prénom et votre adresse email.";
+            errorDiv.style.display = 'block';
+        } else {
+            alert("Veuillez entrer votre prénom et votre adresse email.");
+        }
+        return;
+    }
+
+    currentUser = { email, firstName };
+
+    // Afficher le badge utilisateur en haut à droite
+    document.getElementById("headerUserEmail").innerText = `${currentUser.firstName} (${currentUser.email})`;
+    document.getElementById("userHeaderBadge").style.display = 'flex';
+
+    closeVoterModal();
+    submitVotes();
 }
 
 // Lightbox functions

@@ -20,31 +20,8 @@
     </header>
 
     <main class="container">
-        <!-- Section Authentification / Inscription -->
-        <section id="authSection" class="card">
-            <h2>Connexion / Inscription</h2>
-            <p>Entrez votre prénom, email et mot de passe pour participer au vote.</p>
-
-            <div id="auth-error" class="alert alert-error" style="display: none;"></div>
-
-            <div class="form-group">
-                <label>Prénom</label>
-                <input type="text" id="inputFirstName" placeholder="Votre prénom">
-            </div>
-            <div class="form-group">
-                <label>Adresse e-mail</label>
-                <input type="email" id="inputEmail" placeholder="votre.email@example.com">
-            </div>
-            <div class="form-group">
-                <label>Mot de passe</label>
-                <input type="password" id="inputPassword" placeholder="••••••••">
-            </div>
-
-            <button class="btn btn-primary" onclick="handleLoginOrRegister()">Se connecter / S'inscrire</button>
-        </section>
-
-        <!-- Section Concours / Vote -->
-        <section id="contestSection" class="card" style="display: none;">
+        <!-- Section Concours / Galerie (Visible immédiatement sans connexion préalable) -->
+        <section id="contestSection" class="card">
             <!-- Message: Pas encore de votes -->
             <div id="notStartedMessage" class="alert alert-success" style="display: none; background: rgba(59, 130, 246, 0.15); border-color: var(--primary); color: #60a5fa;">
                 <i class="fa-solid fa-clock" style="font-size: 2.5rem; margin-bottom: 0.5rem; display: block;"></i>
@@ -66,7 +43,7 @@
             <div id="votedConfirmationMessage" class="alert alert-success" style="display: none;">
                 <i class="fa-solid fa-check-circle" style="font-size: 2.5rem; margin-bottom: 0.5rem; display: block;"></i>
                 <h2>Vote pris en compte !</h2>
-                <p style="margin-top: 0.5rem; color: #f1f5f9;">Merci pour votre participation. En attente de la fin des votes par l'administrateur.</p>
+                <p style="margin-top: 0.5rem; color: #f1f5f9;">Merci pour votre participation. Votre vote a bien été enregistré.</p>
             </div>
 
             <!-- Zone de Vote Actif -->
@@ -94,11 +71,37 @@
                 </div>
 
                 <div style="margin-top: 2rem;">
-                    <button id="submitVoteBtn" class="btn btn-success" disabled onclick="submitVotes()">Confirmer et Envoyer mon Vote</button>
+                    <button id="submitVoteBtn" class="btn btn-success" disabled onclick="promptVoterIdentity()">Confirmer et Envoyer mon Vote</button>
                 </div>
             </div>
         </section>
     </main>
+
+    <!-- Modal d'identification au moment de voter (Prénom + Email anti-doublon) -->
+    <div id="voterModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; align-items: center; justify-content: center; padding: 1rem;">
+        <div class="card" style="max-width: 450px; width: 100%; margin: 0; background: var(--card-bg);">
+            <div class="card-header">
+                <h2>Validation de votre vote</h2>
+            </div>
+            <p class="subtitle">Veuillez entrer votre prénom et votre adresse email pour valider votre vote (nécessaire pour éviter les votes multiples).</p>
+
+            <div id="modal-error" class="alert alert-error" style="display: none;"></div>
+
+            <div class="form-group">
+                <label>Prénom</label>
+                <input type="text" id="modalFirstName" placeholder="Votre prénom">
+            </div>
+            <div class="form-group">
+                <label>Adresse e-mail</label>
+                <input type="email" id="modalEmail" placeholder="votre.email@example.com">
+            </div>
+
+            <div class="auth-buttons" style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                <button class="btn btn-outline" onclick="closeVoterModal()">Annuler</button>
+                <button class="btn btn-primary" onclick="confirmAndSubmitVote()">Valider et Envoyer</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Modal Lightbox pour zoomer la photo -->
     <div id="photoModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; align-items: center; justify-content: center; padding: 1rem;">
